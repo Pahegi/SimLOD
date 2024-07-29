@@ -27,6 +27,8 @@ mutex mtx;
 
 //string pointcloud_dir = "E:\\datasets\\point clouds\\CA13_SAN_SIM_small";
 string pointcloud_dir = "E:\\datasets\\point clouds\\CA13_SAN_SIM";
+//string pointcloud_dir = "E:/resources/pointclouds/CA13_las";
+// string pointcloud_dir = "D:/resources/pointclouds/CA13_las_tmp";
 
 struct Point{
 	double x, y, z;
