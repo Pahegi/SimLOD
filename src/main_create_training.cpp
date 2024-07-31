@@ -8,12 +8,14 @@
 #include <limits>
 #include <format>
 #include <sstream>
+#include <print>
 
 #include "laszip_api.h"
 
 #include "unsuck.hpp"
 
 using namespace std;
+using std::print;
 
 namespace fs = filesystem;
 
@@ -144,7 +146,7 @@ void saveHeightmaps(vector<Heightmap>& heightmaps, string outPath){
 		}
 	}
 
-	printfmt("writing file {} \n", outPath);
+	print("writing file {} \n", outPath);
 	writeBinaryFile(outPath, buffer);
 }
 
@@ -188,7 +190,7 @@ void dbg_dumpHeightmap(Heightmap& heightmap, string filename){
 
 	string str = ss.str();
 
-	// printfmt("writing file {} \n", filename);
+	// print("writing file {} \n", filename);
 	writeFile(filename, str);
 }
 
@@ -232,7 +234,7 @@ vector<Point> loadQueryPoints(vector<LasFile>& lasfiles, int64_t numPointsTotal)
 			}
 
 			if (pointIndex_withinFile == -1) {
-				printfmt("error at {}:{} \n", __FILE__, __LINE__);
+				print("error at {}:{} \n", __FILE__, __LINE__);
 				exit(123);
 			}
 
@@ -274,12 +276,12 @@ vector<Point> loadQueryPoints(vector<LasFile>& lasfiles, int64_t numPointsTotal)
 		}
 	);
 
-	printfmt("query points: \n");
+	print("query points: \n");
 	for (int i = 0; i < 10; i++) {
 		Point point = queryPoints[i];
-		printfmt("{:.2f}, {:.2f}, {:.2f} \n", point.x, point.y, point.z);
+		print("{:.2f}, {:.2f}, {:.2f} \n", point.x, point.y, point.z);
 	}
-	printfmt("... [{}] \n", numQueryPoints);
+	print("... [{}] \n", numQueryPoints);
 
 	return queryPoints;
 }
@@ -368,21 +370,21 @@ int main() {
 		lasfiles
 	] = gatherLasfileData(lasLazFiles);
 
-	printfmt("min:  {:.2f}, {:.2f}, {:.2f} \n", min.x, min.y, min.z);
-	printfmt("max:  {:.2f}, {:.2f}, {:.2f} \n", max.x, max.y, max.z);
-	printfmt("size: {:.2f}, {:.2f}, {:.2f} \n", size.x, size.y, size.z);
-	printfmt("#points: {:L} \n", numPointsTotal);
+	print("min:  {:.2f}, {:.2f}, {:.2f} \n", min.x, min.y, min.z);
+	print("max:  {:.2f}, {:.2f}, {:.2f} \n", max.x, max.y, max.z);
+	print("size: {:.2f}, {:.2f}, {:.2f} \n", size.x, size.y, size.z);
+	print("#points: {:L} \n", numPointsTotal);
 
 	// double pixelSize     = 10.0;
 	// int heightmap_width  = ceil(size.x / pixelSize);
 	// int heightmap_height = ceil(size.y / pixelSize);
 	// int numPixels = heightmap_width * heightmap_height;
 
-	// printfmt("heightmap size: {:L} x {:L} \n", heightmap_width, heightmap_height);
+	// print("heightmap size: {:L} x {:L} \n", heightmap_width, heightmap_height);
 
 	// if(numPixels > 15'000 * 15'000){
-	// 	printfmt("pretty large amounts of heightmap pixels: {:L}", numPixels);
-	// 	printfmt("Aborting. Make sure this is correct, and adapt {}:{}", __FILE__, __LINE__);
+	// 	print("pretty large amounts of heightmap pixels: {:L}", numPixels);
+	// 	print("Aborting. Make sure this is correct, and adapt {}:{}", __FILE__, __LINE__);
 
 	// 	return 123;
 	// }
@@ -391,7 +393,7 @@ int main() {
 	
 	// Create heightmaps.
 	// Also, for each tile, create a list of query points it affects
-	printfmt("allocate heightmaps and find out which tiles affect them \n");
+	print("allocate heightmaps and find out which tiles affect them \n");
 	vector<Heightmap> heightmaps;
 	vector<vector<int>> affectedQueryPointsPerTile(lasfiles.size());
 	for(int queryPointIndex = 0; queryPointIndex < queryPoints.size(); queryPointIndex++){
@@ -437,7 +439,7 @@ int main() {
 	}
 
 	// iterate through all tiles and let them update all heightmaps they affect
-	printfmt("Iterating through tiles and updating affected heightmaps \n");
+	print("Iterating through tiles and updating affected heightmaps \n");
 	std::vector<int> range(affectedQueryPointsPerTile.size());
 	std::iota(range.begin(), range.end(), 0);
 	int64_t numProcessedPoints = 0;
@@ -485,7 +487,7 @@ int main() {
 		numProcessedPoints += tile.numPoints;
 		numProcessedSinceLastMsg += tile.numPoints;
 		if(numProcessedSinceLastMsg > 100'000'000){
-			printfmt("#processed points: {:L} \n", numProcessedPoints);
+			print("#processed points: {:L} \n", numProcessedPoints);
 			numProcessedSinceLastMsg = 0;
 		}
 
@@ -494,11 +496,11 @@ int main() {
 	});
 
 	{// Now write the resulting heightmaps to disk
-		printfmt("Storing results on disk \n");
+		print("Storing results on disk \n");
 		string outDir = "./results";
 		fs::create_directories(outDir);
 		string canonicalDir = fs::canonical(fs::path(outDir)).string();
-		printfmt("writing results to {} \n", canonicalDir);
+		print("writing results to {} \n", canonicalDir);
 
 		for(int i = 0; i < heightmaps.size(); i++){
 			Heightmap& heightmap = heightmaps[i];
@@ -513,7 +515,7 @@ int main() {
 		saveHeightmaps(heightmaps, heightmapsPath);
 	}
 
-	printfmt("done! \n");
+	print("done! \n");
 	
 	return 0;
 }

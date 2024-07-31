@@ -747,23 +747,6 @@ inline void monitorFile(string file, std::function<void()> callback) {
 #define GENERATE_WARN_MESSAGE cout << "WARNING: "
 
 
-
-template <typename... Args>
-inline void printfmt(std::string_view fmt, const Args&... args) {
-#ifdef __cpp_lib_format
-	struct thousandsSeparator : std::numpunct<char> {
-		char_type do_thousands_sep() const override { return '\''; }
-		string_type do_grouping() const override { return "\3"; }
-	};
-	auto thousands = std::make_unique<thousandsSeparator>();
-	auto locale = std::locale(std::cout.getloc(), thousands.release());
-
-	std::cout << std::vformat(locale, fmt, std::make_format_args(args...));
-#else
-	std::cout << fmt::vformat(fmt, fmt::make_format_args(args...));
-#endif	
-}
-
 inline std::locale getSaneLocale(){
 	return std::locale(std::cout.getloc(), new punct_facet);
 }

@@ -2281,7 +2281,7 @@ bool ImGui::DragScalar(const char* label, ImGuiDataType data_type, void* p_data,
 
     // Default format string when passing NULL
     if (format == NULL)
-        format = DataTypeGetInfo(data_type)->PrintFmt;
+        format = DataTypeGetInfo(data_type)->print;
     else if (data_type == ImGuiDataType_S32 && strcmp(format, "%d") != 0) // (FIXME-LEGACY: Patch old "%.0f" format string to use "%d", read function more details.)
         format = PatchFormatStringFloatToInt(format);
 
@@ -2900,7 +2900,7 @@ bool ImGui::SliderScalar(const char* label, ImGuiDataType data_type, void* p_dat
 
     // Default format string when passing NULL
     if (format == NULL)
-        format = DataTypeGetInfo(data_type)->PrintFmt;
+        format = DataTypeGetInfo(data_type)->print;
     else if (data_type == ImGuiDataType_S32 && strcmp(format, "%d") != 0) // (FIXME-LEGACY: Patch old "%.0f" format string to use "%d", read function more details.)
         format = PatchFormatStringFloatToInt(format);
 
@@ -3068,7 +3068,7 @@ bool ImGui::VSliderScalar(const char* label, const ImVec2& size, ImGuiDataType d
 
     // Default format string when passing NULL
     if (format == NULL)
-        format = DataTypeGetInfo(data_type)->PrintFmt;
+        format = DataTypeGetInfo(data_type)->print;
     else if (data_type == ImGuiDataType_S32 && strcmp(format, "%d") != 0) // (FIXME-LEGACY: Patch old "%.0f" format string to use "%d", read function more details.)
         format = PatchFormatStringFloatToInt(format);
 
@@ -3311,7 +3311,7 @@ bool ImGui::InputScalar(const char* label, ImGuiDataType data_type, void* p_data
     ImGuiStyle& style = g.Style;
 
     if (format == NULL)
-        format = DataTypeGetInfo(data_type)->PrintFmt;
+        format = DataTypeGetInfo(data_type)->print;
 
     char buf[64];
     DataTypeFormatString(buf, IM_ARRAYSIZE(buf), data_type, p_data, format);

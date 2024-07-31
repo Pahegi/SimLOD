@@ -231,7 +231,7 @@ struct CudaPrint {
 					(end_second - start_second) * sizeof(CudaPrintEntry), 
 					cstream);
 
-				// printfmt("counters(host/gpu): {:4} / {:4}, first: {:4} - {:4}, second: {:4} - {:4} \n", firstEntry, lastEntry, start_first, end_first, start_second, end_second);
+				// print("counters(host/gpu): {:4} / {:4}, first: {:4} - {:4}, second: {:4} - {:4} \n", firstEntry, lastEntry, start_first, end_first, start_second, end_second);
 
 				cuEventRecord(cevent_loadEntriesFinished, cstream);
 				
@@ -267,7 +267,7 @@ struct CudaPrint {
 		
 
 		for(string line : lines){
-			printfmt(line);
+			print("{}", line);
 		}
 
 		lines.clear();

@@ -2,6 +2,7 @@
 
 #include "LasLoader.h"
 
+#include <print>
 #include <filesystem>
 #include <mutex>
 #include <deque>
@@ -13,6 +14,7 @@
 
 
 using std::string;
+using std::print;
 
 static thread_local bool initialized = false;
 static thread_local void* thread_buffer = nullptr;
@@ -35,11 +37,11 @@ VOID CALLBACK FileIOCompletionRoutine_las(
 {
 
 	if(errorCode != 0){
-		printfmt("read error: {} \n", errorCode);
+		print("read error: {} \n", errorCode);
 	}
 
 	if(numBytesTransfered == 0){
-		printfmt("0 bytes read. offset: {:14L}, numBytes: {:9} \n", lpOverlapped->Offset, numBytesTransfered);
+		print("0 bytes read. offset: {:14L}, numBytes: {:9} \n", lpOverlapped->Offset, numBytesTransfered);
 
 		isLoadPending = false;
 		shouldRetry = true;
@@ -119,7 +121,7 @@ uint64_t loadLasNative(string file, LasHeader header, uint64_t firstPoint, uint6
 		);
 
 		if (returnValue == 0) {
-			printfmt("ERROR: ReadFileEx failed \n");
+			print("ERROR: ReadFileEx failed\n");
 
 			isLoadPending = false;
 			isLoadDone = false;

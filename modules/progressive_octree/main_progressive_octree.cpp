@@ -1,6 +1,7 @@
 
 
 #include <iostream>
+#include <print>
 #include <filesystem>
 #include <locale.h>
 #include <string>
@@ -21,6 +22,7 @@ using namespace fmt;
 #include "CudaModularProgram.h"
 #include "GLRenderer.h"
 #include "cudaGL.h"
+#include "../CudaPrint/CudaPrint.h"
 
 #include "unsuck.hpp"
 #include "laszip_api.h"
@@ -397,8 +399,8 @@ void initCudaProgram(shared_ptr<GLRenderer> renderer){
 	memcpy(h_numChunksToLoad_pinned, &zero_u64, 8);
 	
 
-	printfmt("sizeof(Tile): {} \n", sizeof(Tile));
-	printfmt("sizeof(Chunk): {} \n", sizeof(Chunk));
+	print("sizeof(Tile): {} \n", sizeof(Tile));
+	print("sizeof(Chunk): {} \n", sizeof(Chunk));
 
 	cuda_program = new CudaModularProgram({
 		.modules = {
@@ -518,8 +520,8 @@ int main(){
 	int numThreads = 2 * static_cast<int>(cpu.numProcessors);
 	// numThreads = 16;
 	// int numThreads = max(2 * cpu.numProcessors - 10, 2ull);
-	printfmt("cpu.numProcessors: {} \n", cpu.numProcessors);
-	printfmt("launching {} loader threads \n", numThreads);
+	print("cpu.numProcessors: {} \n", cpu.numProcessors);
+	print("launching {} loader threads \n", numThreads);
 
 	renderer->controls->yaw    = -1.15;
 	renderer->controls->pitch  = -0.57;
@@ -710,7 +712,7 @@ int main(){
 		//vector<string> pointCloudFiles;
 
 		//for(auto file : files){
-		//	printfmt("dropped: {} \n", file);
+		//	print("dropped: {} \n", file);
 
 		//	if(iEndsWith(file, "las") || iEndsWith(file, "laz")){
 		//		pointCloudFiles.push_back(file);
@@ -1016,9 +1018,9 @@ int main(){
 				pendingCommandLoads.push_back(pending);
 
 
-				 printfmt("load {} to {} \n", start_0, end_0);
+				 print("load {} to {} \n", start_0, end_0);
 				 if(start_1 != end_1){
-				 	printfmt("also load {} to {} \n", start_1, end_1);
+				 	print("also load {} to {} \n", start_1, end_1);
 				 }
 
 				commandsLoadedFromDevice = commandQueueCounter;

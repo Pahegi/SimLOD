@@ -2,6 +2,7 @@
 
 #include "SimlodLoader.h"
 
+#include <print>
 #include <filesystem>
 #include <mutex>
 #include <deque>
@@ -28,6 +29,8 @@ static thread_local string dbg_file;
 
 #include "windows.h"
 
+using std::print;
+
 // - Callback that is invoked when ReadFileEx finished
 // - The callback is invoked within the calling thread's context!
 // - A thread needs to SleepEx so that the callback can be invoked.
@@ -38,11 +41,11 @@ VOID CALLBACK FileIOCompletionRoutine_simlod(
 {
 
 	if(errorCode != 0){
-		printfmt("read error: {} \n", errorCode);
+		print("read error: {} \n", errorCode);
 	}
 
 	if(numBytesTransfered == 0){
-		printfmt("0 bytes read. offset: {:14L}, numBytes: {:9} \n", lpOverlapped->Offset, numBytesTransfered);
+		print("0 bytes read. offset: {:14L}, numBytes: {:9} \n", lpOverlapped->Offset, numBytesTransfered);
 
 		isLoadPending = false;
 		shouldRetry = true;
@@ -119,7 +122,7 @@ void loadFileNative(
 		);
 
 		if (returnValue == 0) {
-			printfmt("ERROR: ReadFileEx failed \n");
+			print("ERROR: ReadFileEx failed \n");
 
 			isLoadPending = false;
 			isLoadDone = false;

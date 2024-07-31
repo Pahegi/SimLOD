@@ -151,7 +151,7 @@ struct CudaModule{
 		ltoir = new char[ltoirSize];
 		nvrtcGetLTOIR(prog, ltoir);
 
-		cout << format("compiled ltoir. size: {} byte \n", ltoirSize);
+		print("compiled ltoir. size: {} byte \n", ltoirSize);
 
 		//nvrtcGetNVVMSize(prog, &nvvmSize);
 		//nvvm = new char[nvvmSize];
