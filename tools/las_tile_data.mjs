@@ -164,7 +164,10 @@ let outCSV = "./chunkPoints_2.csv";
 // 	"E:/resources/pointclouds/CA13_las/ot_35120B4116C_1_1.las",
 // ];
 
-let files = fs.readdirSync("E:/resources/pointclouds/CA13_las");
+// let dir = "E:/resources/pointclouds/CA13_las";
+let dir = "D:/resources/pointclouds/swisssurface3d/las";
+let files = fs.readdirSync(dir);
+// let files = fs.readdirSync("E:/resources/pointclouds/CA13_las");
 
 // console.log(files);
 
@@ -174,8 +177,13 @@ try{
 }catch(e){}
 
 await fsp.appendFile(outPath, "filename, min_x, min_y, min_z, max_x, max_y, max_z, x, y, z, x, y, z, ... \n");
+let i = 0;
 for(let filename of files){
 
-	let filepath = `E:/resources/pointclouds/CA13_las/${filename}`;
+	let filepath = `${dir}/${filename}`;
 	await processLas(filepath, outPath, outCSV);
+
+	console.log(`processing ${filepath} [${i} / ${files.length}]`);
+
+	i++;
 }
