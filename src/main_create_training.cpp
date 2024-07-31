@@ -19,7 +19,7 @@ using std::print;
 
 namespace fs = filesystem;
 
-//constexpr int numQueryPoints = 10; // 10'000;
+//constexpr int numQueryPoints = 10;
 constexpr int numQueryPoints = 10'000;
 constexpr double pixelSize     = 10.0;
 constexpr int heightmapSize    = 64;
@@ -28,7 +28,8 @@ constexpr int heightmapSize    = 64;
 mutex mtx;
 
 //string pointcloud_dir = "E:\\datasets\\point clouds\\CA13_SAN_SIM_small";
-string pointcloud_dir = "E:\\datasets\\point clouds\\CA13_SAN_SIM";
+//string pointcloud_dir = "E:\\datasets\\point clouds\\CA13_SAN_SIM";
+string pointcloud_dir = "E:\\datasets\\point clouds\\swisssurface3d_uncomp";
 //string pointcloud_dir = "E:/resources/pointclouds/CA13_las";
 // string pointcloud_dir = "D:/resources/pointclouds/CA13_las_tmp";
 
