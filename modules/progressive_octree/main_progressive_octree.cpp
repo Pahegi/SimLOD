@@ -11,12 +11,7 @@
 #include <deque>
 #include <atomic>
 #include <optional>
-#ifdef __cpp_lib_format
 #include <format>
-#else
-#include "fmt/core.h"
-using namespace fmt;
-#endif
 
 #include "CudaModularProgram.h"
 #include "GLRenderer.h"
@@ -189,7 +184,7 @@ struct PinnedMemPool{
 		lock_guard<mutex> lock(mtx_pool);
 
 		if(pool.size() == 0){
-			printfmt("pool is empty, allocating additional pinned memory slots \n");
+			println("pool is empty, allocating additional pinned memory slots \n");
 			reserveSlot();
 		}
 
@@ -354,7 +349,7 @@ void resetCUDA(shared_ptr<GLRenderer> renderer){
 		0, 0, args);
 
 	if(res_launch != CUDA_SUCCESS){
-		printfmt("CUDA kernel 'reset' failed.\n");
+		println("CUDA kernel 'reset' failed.\n");
 	}
 
 	cuCtxSynchronize();
@@ -381,23 +376,11 @@ void updateOctree(shared_ptr<GLRenderer> renderer){
 		&cptr_batchSizes,
 	};
 
-	// printfmt("launching update!\n");
-	// printfmt("    frame:                   {} \n", renderer->frameCount);
-	// printfmt("    points:                  {} \n", batchStreamPointSize[processRingIndex]);
-	// printfmt("    uploadIndex:             {} \n", batchStreamUploadIndex);
-	// printfmt("    uploadRingIndex:         {} \n", batchStreamUploadIndex % BATCH_STREAM_SIZE);
-	// printfmt("    processIndex:            {} \n", batchStreamProcessIndex);
-	// printfmt("    processRingIndex:        {} \n", processRingIndex);
-	// printfmt("    cptr_points_ringbuffer:  {} \n", cptr_points_ringbuffer);
-	// printfmt("    ptrPoints:               {} \n", ptrPoints);
-
 	cuEventRecord(ce_update_start, 0);
-	// printfmt("launch update \n");
 	auto res_launch = cuLaunchCooperativeKernel(cuda_program_update->kernels["kernel_construct"],
 		numGroups, 1, 1,
 		workgroupSize, 1, 1,
 		0, 0, args);
-	// printfmt("update done\n");
 
 	if(res_launch != CUDA_SUCCESS){
 		const char* str; 
@@ -445,7 +428,7 @@ void updateOctree(shared_ptr<GLRenderer> renderer){
 // 		&cptr_stats
 // 	};
 
-// 	printfmt("launching color filter!\n");
+// 	println("launching color filter!\n");
 
 // 	auto res_launch = cuLaunchCooperativeKernel(cuda_program_filter->kernels["kernel"],
 // 		numGroups, 1, 1,
@@ -582,6 +565,10 @@ void initCudaProgram(shared_ptr<GLRenderer> renderer){
 	cuMemGetInfo(&availableMem, &totalMem);
 
 	size_t cptr_buffer_persistent_bytes = static_cast<size_t>(static_cast<double>(availableMem) * 0.80);
+	// cptr_buffer_persistent_bytes = 1'000'000'000;
+	println("available mem: {}", availableMem);
+	println("allocating: {}", cptr_buffer_persistent_bytes);
+
 	persistentBufferCapacity = cptr_buffer_persistent_bytes;
 	cuMemAlloc(&cptr_buffer_persistent, cptr_buffer_persistent_bytes);
 
@@ -591,14 +578,14 @@ void initCudaProgram(shared_ptr<GLRenderer> renderer){
 		+ sizeof(Stats)
 		+ cptr_buffer_persistent_bytes;
 
-	printfmt("cuMemAlloc(&cptr_buffer,            {:8L} MB);\n", cptr_buffer_bytes / 1'000'000llu);
-	printfmt("cuMemAlloc(&cptr_nodes,             {:8L} MB);\n", cptr_nodes_bytes / 1'000'000llu);
-	printfmt("cuMemAlloc(&cptr_renderbuffer,      {:8L} MB);\n", cptr_renderbuffer_bytes / 1'000'000llu);
-	printfmt("cuMemAlloc(&cptr_stats,             {:8L}   );\n", sizeof(Stats));
-	printfmt("cuMemAlloc(&cptr_buffer_persistent, {:8L} MB);\n", cptr_buffer_persistent_bytes / 1'000'000llu);
-	printfmt("==============================================\n");
-	printfmt("                                    {:8L} MB  \n", total / 1'000'000llu);
-	printfmt("\n");
+	println("cuMemAlloc(&cptr_buffer,            {:8L} MB);\n", cptr_buffer_bytes / 1'000'000llu);
+	println("cuMemAlloc(&cptr_nodes,             {:8L} MB);\n", cptr_nodes_bytes / 1'000'000llu);
+	println("cuMemAlloc(&cptr_renderbuffer,      {:8L} MB);\n", cptr_renderbuffer_bytes / 1'000'000llu);
+	println("cuMemAlloc(&cptr_stats,             {:8L}   );\n", sizeof(Stats));
+	println("cuMemAlloc(&cptr_buffer_persistent, {:8L} MB);\n", cptr_buffer_persistent_bytes / 1'000'000llu);
+	println("==============================================\n");
+	println("                                    {:8L} MB  \n", total / 1'000'000llu);
+	println("\n");
 
 	cuda_program_update = new CudaModularProgram({
 		.modules = {
@@ -643,7 +630,7 @@ void initCudaProgram(shared_ptr<GLRenderer> renderer){
 
 void reload(){
 
-	printfmt("start loading \n");
+	println("start loading \n");
 
 	loadStart = static_cast<float>(now());
 	totalUpdateDuration     = 0.0f;
@@ -820,7 +807,7 @@ void spawnLoader(size_t i) {
 			bool processingLagsBehind = numPointsLoaded > stats.numPointsProcessed + BATCH_STREAM_SIZE * MAX_BATCH_SIZE;
 
 			// if (processingLagsBehind) {
-			// 	printfmt("processing lags behind\n");
+			// 	println("processing lags behind\n");
 			// }
 
 			if (everythingIsDone || processingLagsBehind || resetInProgress.load()) {
@@ -859,7 +846,7 @@ void spawnLoader(size_t i) {
 
 				int batchID = batch.first / MAX_BATCH_SIZE;
 				double t_start = now();
-				// printfmt("start loading batch {} at {:.3f} \n", batchID, t_start);
+				// println("start loading batch {} at {:.3f} \n", batchID, t_start);
 
 				numThreadsLoading++;
 				if(iEndsWith(batch.file, "las")){
@@ -942,7 +929,7 @@ void spawnLoader(size_t i) {
 
 				// double t_end = now();
 				// double millies = (t_end - t_start) * 1000.0;
-				// printfmt("finished loading batch {} at {:.3f}. duration: {:.3f} ms \n", batchID, t_end, millies);
+				// println("finished loading batch {} at {:.3f}. duration: {:.3f} ms \n", batchID, t_end, millies);
 
 				numThreadsLoading--;
 			}else {
@@ -1070,8 +1057,8 @@ int main(){
 	int numThreads = 2 * static_cast<int>(cpu.numProcessors);
 	// numThreads = 16;
 	// int numThreads = max(2 * cpu.numProcessors - 10, 2ull);
-	printfmt("cpu.numProcessors: {} \n", cpu.numProcessors);
-	printfmt("launching {} loader threads \n", numThreads);
+	println("cpu.numProcessors: {} \n", cpu.numProcessors);
+	println("launching {} loader threads \n", numThreads);
 
 
 	renderer->controls->yaw    = -1.15;
@@ -1121,10 +1108,10 @@ int main(){
 		vector<string> pointCloudFiles;
 
 		t_drop_start = now();
-		printfmt("drop at {:.3f} \n", now());
+		println("drop at {:.3f} \n", now());
 
 		for(auto file : files){
-			printfmt("dropped: {} \n", file);
+			println("dropped: {} \n", file);
 
 			if(iEndsWith(file, "las") || iEndsWith(file, "laz")){
 				pointCloudFiles.push_back(file);
@@ -1187,7 +1174,7 @@ int main(){
 			totalUpdateDuration = 1000.0f * (static_cast<float>(now()) - loadStart);
 		}else if(requestBenchmark && lastBatchFinishedDevice){
 			requestBenchmark = false;
-			printfmt("finished loading, disabling benchmarking. \n");
+			println("finished loading, disabling benchmarking. \n");
 		}
 
 		static int statsAge = 0;
@@ -1207,7 +1194,7 @@ int main(){
 			uint64_t numPointsProcessed = stats.numPointsProcessed;
 
 			// if(numPointsProcessed != previousNumPointsProcessed){
-			// 	printfmt("processed {} at {:.3f}. since drop: {:.3f} \n", numPointsProcessed, now(), now() - t_drop_start);
+			// 	println("processed {} at {:.3f}. since drop: {:.3f} \n", numPointsProcessed, now(), now() - t_drop_start);
 
 			// 	previousNumPointsProcessed = numPointsProcessed;
 			// }
@@ -1219,9 +1206,9 @@ int main(){
 			}
 			if(newLastBatchFinishedDevice != lastBatchFinishedDevice){
 				lastBatchFinishedDevice = newLastBatchFinishedDevice;
-				printfmt("stats.numPointsProcessed = {} \n", stats.numPointsProcessed);
-				printfmt("numPointsTotal = {} \n", uint64_t(numPointsTotal));
-				printfmt("setting lastBatchFinishedDevice = {} \n", lastBatchFinishedDevice ? "true" : "false");
+				println("stats.numPointsProcessed = {} \n", stats.numPointsProcessed);
+				println("numPointsTotal = {} \n", uint64_t(numPointsTotal));
+				println("setting lastBatchFinishedDevice = {} \n", lastBatchFinishedDevice ? "true" : "false");
 			}
 		}
 
@@ -1601,17 +1588,10 @@ int main(){
 			ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 0, 0, 255));
 
 			if(stats.memCapacityReached){
-#ifdef __cpp_lib_format
-        string message = std::format("WARNING: Octree mem usage ({} MB) approaches total capacity ({} MB). Further points are ignored.",
+				string message = format("WARNING: Octree mem usage ({} MB) approaches total capacity ({} MB). Further points are ignored.",
 					stats.allocatedBytes_persistent / 1'000'000llu,
 					persistentBufferCapacity / 1'000'000llu
 				);
-#else
-        string message = fmt::format("WARNING: Octree mem usage ({} MB) approaches total capacity ({} MB). Further points are ignored.",
-                                     stats.allocatedBytes_persistent / 1'000'000llu,
-                                     persistentBufferCapacity / 1'000'000llu
-        );
-#endif
 
 				ImGui::Text(message.c_str());
 			}

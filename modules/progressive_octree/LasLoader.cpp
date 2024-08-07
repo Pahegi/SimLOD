@@ -35,11 +35,11 @@ VOID CALLBACK FileIOCompletionRoutine_las(
 {
 
 	if(errorCode != 0){
-		printfmt("read error: {} \n", errorCode);
+		println("read error: {} \n", errorCode);
 	}
 
 	if(numBytesTransfered == 0){
-		printfmt("0 bytes read. offset: {:14L}, numBytes: {:9} \n", lpOverlapped->Offset, numBytesTransfered);
+		println("0 bytes read. offset: {:14L}, numBytes: {:9} \n", lpOverlapped->Offset, numBytesTransfered);
 
 		isLoadPending = false;
 		shouldRetry = true;
@@ -119,7 +119,7 @@ uint64_t loadLasNative(string file, LasHeader header, uint64_t firstPoint, uint6
 		);
 
 		if (returnValue == 0) {
-			printfmt("ERROR: ReadFileEx failed \n");
+			println("ERROR: ReadFileEx failed \n");
 
 			isLoadPending = false;
 			isLoadDone = false;

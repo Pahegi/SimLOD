@@ -7,8 +7,10 @@
 #include <nvJitLink.h>
 #include <cmath>
 #include "cuda.h"
+#include <print>
 
 using std::string;
+using std::println;
 
 using namespace std;
 
@@ -71,15 +73,28 @@ struct CudaModule{
 		string dir = fs::path(path).parent_path().string();
 		// string optInclude = "-I " + dir;
 
+		// if(fs::exists(path)){
+		// 	println("{} exists", path);
+		// }else{
+		// 	println("{} does not exists", path);
+		// }
+
 		string cuda_path = std::getenv("CUDA_PATH");
 		// string cuda_include = "-I " + cuda_path + "/include";
 
 		string optInclude = std::format("-I {}", dir).c_str();
 		string cuda_include = std::format("-I {}/include", cuda_path);
-		string cudastd_include = std::format("-I {}/include/cuda/std", cuda_path);
-		
+		// string cudastd_include = std::format("-I {}/include/cuda/std", cuda_path);
+
+		println("cuda_include: '{}'", optInclude);
+
 		nvrtcProgram prog;
 		string source = readFile(path);
+
+
+		// println("source: ");
+		// println("{}", source);
+
 		nvrtcCreateProgram(&prog, source.c_str(), name.c_str(), 0, NULL, NULL);
 		std::vector<const char*> opts = { 
 			"--gpu-architecture=compute_89",
@@ -123,7 +138,7 @@ struct CudaModule{
 		ltoir = new char[ltoirSize];
 		nvrtcGetLTOIR(prog, ltoir);
 
-		printfmt("compiled ltoir. size: {} byte \n", ltoirSize);
+		println("compiled ltoir. size: {} byte \n", ltoirSize);
 
 		nvrtcDestroyProgram(&prog);
 

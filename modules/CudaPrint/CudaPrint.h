@@ -1,17 +1,18 @@
 #pragma once
 
-#define FMT_HEADER_ONLY
-
 #include <string>
+#include <print>
+#include <format>
 
 
 #include "CudaModularProgram.h"
 #include "cuda.h"
 #include "cuda_runtime.h"
-#include "fmt/format.h"
-#include "fmt/args.h"
+
 
 using std::string;
+using std::format;
+using std::println;
 
 // #include "HostDeviceInterface.h"
 
@@ -148,129 +149,129 @@ struct CudaPrint {
 	}
 
 	void processEntry(CudaPrintEntry entry){
-		const char* strStart = (const char*)entry.data;
-		string strKey(strStart, entry.keylen);
+		// const char* strStart = (const char*)entry.data;
+		// string strKey(strStart, entry.keylen);
 
-		if(entry.method == 0){
-			// METHOD PRINT LINE
+		// if(entry.method == 0){
+		// 	// METHOD PRINT LINE
 
-			auto store = fmt::dynamic_format_arg_store<fmt::format_context>();
+		// 	auto store = fmt::dynamic_format_arg_store<fmt::format_context>();
 			
-			for(int i = 0; i < entry.numArgs; i++){
-				auto arg = entry.getArgument(i);
+		// 	for(int i = 0; i < entry.numArgs; i++){
+		// 		auto arg = entry.getArgument(i);
 
-				if(arg.type == TYPE_INT32_T)        store.push_back(arg.get<int32_t>());
-				else if(arg.type == TYPE_UINT32_T)  store.push_back(arg.get<uint32_t>());
-				else if(arg.type == TYPE_FLOAT)     store.push_back(arg.get<float>());
-				else if(arg.type == TYPE_CSTRING)   store.push_back(arg.get<string>());
-				else                                store.push_back("missing arg handler");
-			}
+		// 		if(arg.type == TYPE_INT32_T)        store.push_back(arg.get<int32_t>());
+		// 		else if(arg.type == TYPE_UINT32_T)  store.push_back(arg.get<uint32_t>());
+		// 		else if(arg.type == TYPE_FLOAT)     store.push_back(arg.get<float>());
+		// 		else if(arg.type == TYPE_CSTRING)   store.push_back(arg.get<string>());
+		// 		else                                store.push_back("missing arg handler");
+		// 	}
 
-			fmt::vprint(strKey, store);
+		// 	fmt::vprint(strKey, store);
 
-		}else if(entry.method == 1){
-			// Method SET key/value
-			table[strKey] = entry;
-		}
+		// }else if(entry.method == 1){
+		// 	// Method SET key/value
+		// 	table[strKey] = entry;
+		// }
 	}
 
 	void update(){
 
-		// always load metadata/counters each frame
-		cuMemcpyDtoHAsync(data_pinned, cptr, 16, cstream);
+		// // always load metadata/counters each frame
+		// cuMemcpyDtoHAsync(data_pinned, cptr, 16, cstream);
 
-		static struct{
-			uint32_t start_first;
-			uint32_t end_first;
-			uint32_t start_second;
-			uint32_t end_second;
-		} loaded;
+		// static struct{
+		// 	uint32_t start_first;
+		// 	uint32_t end_first;
+		// 	uint32_t start_second;
+		// 	uint32_t end_second;
+		// } loaded;
 
-		if(stage == CudaPrintStage::NONE){
-			// asynchronously load counter
-			cuMemcpyDtoHAsync(data_pinned, cptr, 16, cstream);
-			cuEventRecord(cevent_loadCounterFinished, cstream);
+		// if(stage == CudaPrintStage::NONE){
+		// 	// asynchronously load counter
+		// 	cuMemcpyDtoHAsync(data_pinned, cptr, 16, cstream);
+		// 	cuEventRecord(cevent_loadCounterFinished, cstream);
 
-			stage = CudaPrintStage::LOADING_COUNTER;
+		// 	stage = CudaPrintStage::LOADING_COUNTER;
 			
-		}else if(stage == CudaPrintStage::LOADING_COUNTER){
+		// }else if(stage == CudaPrintStage::LOADING_COUNTER){
 
-			// check if async load of counters is finished
-			auto loadCountersFinished = cuEventQuery(cevent_loadCounterFinished) == CUDA_SUCCESS;
-			if(loadCountersFinished){
+		// 	// check if async load of counters is finished
+		// 	auto loadCountersFinished = cuEventQuery(cevent_loadCounterFinished) == CUDA_SUCCESS;
+		// 	if(loadCountersFinished){
 
-				uint32_t firstEntry = static_cast<uint32_t>(this->entryCounter);
-				uint32_t lastEntry = static_cast<uint32_t>(printBuffer->entryCounter);
-				uint32_t numEntries = lastEntry - firstEntry;
-				// uint32_t firstByte = 16 + firstEntry * sizeof(CudaPrintEntry);
+		// 		uint32_t firstEntry = static_cast<uint32_t>(this->entryCounter);
+		// 		uint32_t lastEntry = static_cast<uint32_t>(printBuffer->entryCounter);
+		// 		uint32_t numEntries = lastEntry - firstEntry;
+		// 		// uint32_t firstByte = 16 + firstEntry * sizeof(CudaPrintEntry);
 
-				uint32_t start_first = this->entryCounter % MAX_CUDAPRINT_ENTRIES;
-				uint32_t start_second = 0;
-				uint32_t end_first, end_second;
+		// 		uint32_t start_first = this->entryCounter % MAX_CUDAPRINT_ENTRIES;
+		// 		uint32_t start_second = 0;
+		// 		uint32_t end_first, end_second;
 				
-				if((firstEntry % MAX_CUDAPRINT_ENTRIES ) <= (lastEntry % MAX_CUDAPRINT_ENTRIES)){
-					end_first = start_first + numEntries;
-					end_second = 0;
-				}else{
-					end_first = MAX_CUDAPRINT_ENTRIES;
-					end_second = (start_first + numEntries) % MAX_CUDAPRINT_ENTRIES;
-				}
+		// 		if((firstEntry % MAX_CUDAPRINT_ENTRIES ) <= (lastEntry % MAX_CUDAPRINT_ENTRIES)){
+		// 			end_first = start_first + numEntries;
+		// 			end_second = 0;
+		// 		}else{
+		// 			end_first = MAX_CUDAPRINT_ENTRIES;
+		// 			end_second = (start_first + numEntries) % MAX_CUDAPRINT_ENTRIES;
+		// 		}
 
-				// memcpy entries (first part if ring-overflow)
-				cuMemcpyDtoHAsync(
-					data_pinned + 16 + start_first * sizeof(CudaPrintEntry), 
-					cptr + 16 + start_first * sizeof(CudaPrintEntry), 
-					(end_first - start_first) * sizeof(CudaPrintEntry), 
-					cstream);
+		// 		// memcpy entries (first part if ring-overflow)
+		// 		cuMemcpyDtoHAsync(
+		// 			data_pinned + 16 + start_first * sizeof(CudaPrintEntry), 
+		// 			cptr + 16 + start_first * sizeof(CudaPrintEntry), 
+		// 			(end_first - start_first) * sizeof(CudaPrintEntry), 
+		// 			cstream);
 
-				// memcpy second part if ring-overflow, or nothing
-				if(start_second != end_second)
-				cuMemcpyDtoHAsync(
-					data_pinned + 16 + start_second * sizeof(CudaPrintEntry), 
-					cptr + 16 + start_second * sizeof(CudaPrintEntry), 
-					(end_second - start_second) * sizeof(CudaPrintEntry), 
-					cstream);
+		// 		// memcpy second part if ring-overflow, or nothing
+		// 		if(start_second != end_second)
+		// 		cuMemcpyDtoHAsync(
+		// 			data_pinned + 16 + start_second * sizeof(CudaPrintEntry), 
+		// 			cptr + 16 + start_second * sizeof(CudaPrintEntry), 
+		// 			(end_second - start_second) * sizeof(CudaPrintEntry), 
+		// 			cstream);
 
-				// printfmt("counters(host/gpu): {:4} / {:4}, first: {:4} - {:4}, second: {:4} - {:4} \n", firstEntry, lastEntry, start_first, end_first, start_second, end_second);
+		// 		// printfmt("counters(host/gpu): {:4} / {:4}, first: {:4} - {:4}, second: {:4} - {:4} \n", firstEntry, lastEntry, start_first, end_first, start_second, end_second);
 
-				cuEventRecord(cevent_loadEntriesFinished, cstream);
+		// 		cuEventRecord(cevent_loadEntriesFinished, cstream);
 				
-				loaded.end_first = end_first;
-				loaded.end_second = end_second;
-				loaded.start_first = start_first;
-				loaded.start_second = start_second;
+		// 		loaded.end_first = end_first;
+		// 		loaded.end_second = end_second;
+		// 		loaded.start_first = start_first;
+		// 		loaded.start_second = start_second;
 
-				this->entryCounter = lastEntry;
-				stage = CudaPrintStage::LOADING_ENTRIES;
-			}else{
-				// do nothing and try again next frame
-			}
+		// 		this->entryCounter = lastEntry;
+		// 		stage = CudaPrintStage::LOADING_ENTRIES;
+		// 	}else{
+		// 		// do nothing and try again next frame
+		// 	}
 
 
-		}else if(stage == CudaPrintStage::LOADING_ENTRIES){
-			// check if async load of entries is finished
-			auto loadEntriesFinished = cuEventQuery(cevent_loadEntriesFinished) == CUDA_SUCCESS;
-			if(loadEntriesFinished){
+		// }else if(stage == CudaPrintStage::LOADING_ENTRIES){
+		// 	// check if async load of entries is finished
+		// 	auto loadEntriesFinished = cuEventQuery(cevent_loadEntriesFinished) == CUDA_SUCCESS;
+		// 	if(loadEntriesFinished){
 
-				for(size_t i = loaded.start_first; i < loaded.end_first; i++){
-					auto entry = printBuffer->entries[i];
+		// 		for(size_t i = loaded.start_first; i < loaded.end_first; i++){
+		// 			auto entry = printBuffer->entries[i];
 					
-					processEntry(entry);
-				}
+		// 			processEntry(entry);
+		// 		}
 
-				stage = CudaPrintStage::NONE;
-			}else{
-				// do nothing and try again next frame
-			}
-		}
+		// 		stage = CudaPrintStage::NONE;
+		// 	}else{
+		// 		// do nothing and try again next frame
+		// 	}
+		// }
 
 		
 
-		for(string line : lines){
-			printfmt(line);
-		}
+		// for(string line : lines){
+		// 	println(line);
+		// }
 
-		lines.clear();
+		// lines.clear();
 		
 		
 		

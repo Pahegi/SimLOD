@@ -91,9 +91,11 @@ cmake ../ -G "Visual Studio 17 2022" -A x64
 #### Windows or Linux with CMake
 
 ```
-mkdir out && cd out         # Create a build directory
-cmake .. && make            # Configure CMake and build the SimLOD target
-./SimLOD                    # Run SimLOD
+mkdir out && cd out                     # Create a build directory
+cmake .. && make                        # Configure CMake and build the SimLOD target
+
+export CUDA_PATH=/usr/local/cuda-12.6   # set CUDA_PATH to wherever your CUDA dir with the includes is.
+./SimLOD                                # Run SimLOD
 ```
 
 

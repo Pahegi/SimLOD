@@ -3,7 +3,7 @@ project(SimLOD)
 
 include(FetchContent)
 
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 23)
 
 option(SimLOD_CreateCUDASymlinks "Create symbolic links instead of copying CUDA files." OFF)
 
@@ -41,7 +41,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 # Dependencies
 
 ## CUDA toolkit
-find_package(CUDAToolkit 11.8 REQUIRED)
+find_package(CUDAToolkit 12.4 REQUIRED)
 target_include_directories(${PROJECT_NAME} PRIVATE
 	CUDAToolkit_INCLUDE_DIRS)
 
@@ -54,8 +54,8 @@ find_package(OpenGL REQUIRED)
 target_link_libraries(${PROJECT_NAME} ${OPENGL_LIBRARY})
 
 ## fmt 
-add_subdirectory(libs/fmt)
-target_link_libraries(${PROJECT_NAME} fmt::fmt)
+#add_subdirectory(libs/fmt)
+#target_link_libraries(${PROJECT_NAME} fmt::fmt)
 
 ## glew
 target_include_directories(${PROJECT_NAME} PRIVATE
