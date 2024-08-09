@@ -27,9 +27,9 @@ constexpr int heightmapSize    = 64;
 
 mutex mtx;
 
-//string pointcloud_dir = "E:\\datasets\\point clouds\\CA13_SAN_SIM_small";
+string pointcloud_dir = "E:\\datasets\\point clouds\\CA13_SAN_SIM_small";
 //string pointcloud_dir = "E:\\datasets\\point clouds\\CA13_SAN_SIM";
-string pointcloud_dir = "E:\\datasets\\point clouds\\swisssurface3d_uncomp";
+//string pointcloud_dir = "E:\\datasets\\point clouds\\swisssurface3d_uncomp";
 //string pointcloud_dir = "E:/resources/pointclouds/CA13_las";
 // string pointcloud_dir = "D:/resources/pointclouds/CA13_las_tmp";
 
@@ -82,11 +82,16 @@ vector<Point> loadPoints(LasFile lasfile){
 	for(int pointIndex = 0; pointIndex < lasfile.numPoints; pointIndex++){
 		laszip_read_point(laszip_reader);
 		laszip_get_coordinates(laszip_reader, XYZ);
+		//laz_point[pointIndex];
 
 		Point point;
 		point.x = XYZ[0];
 		point.y = XYZ[1];
 		point.z = XYZ[2];
+		point.rgba[0] = laz_point->rgb[0] > 255 ? laz_point->rgb[0] / 256 : laz_point->rgb[0];
+		point.rgba[1] = laz_point->rgb[1] > 255 ? laz_point->rgb[1] / 256 : laz_point->rgb[1];
+		point.rgba[2] = laz_point->rgb[2] > 255 ? laz_point->rgb[2] / 256 : laz_point->rgb[2];
+		point.rgba[3] = 255;
 
 		points.push_back(point);
 	}
@@ -396,6 +401,7 @@ int main() {
 	// Also, for each tile, create a list of query points it affects
 	print("allocate heightmaps and find out which tiles affect them \n");
 	vector<Heightmap> heightmaps;
+	vector<Heightmap> rgb_maps[3];
 	vector<vector<int>> affectedQueryPointsPerTile(lasfiles.size());
 	for(int queryPointIndex = 0; queryPointIndex < queryPoints.size(); queryPointIndex++){
 
@@ -425,6 +431,9 @@ int main() {
 			heightmap.sum[pixelID] = 0.0;
 		}
 		heightmaps.push_back(heightmap);
+		for (int i = 0; i < 3; i++)
+			rgb_maps[i].push_back(heightmap);  // only zero init. we can store copies for RGB
+		
 
 		for(int tileIndex = 0; tileIndex < lasfiles.size(); tileIndex++){
 			LasFile& tile = lasfiles[tileIndex];
@@ -457,6 +466,7 @@ int main() {
 
 			for (int queryPointIndex : affectedQueryPoints) {
 				Heightmap& heightmap = heightmaps[queryPointIndex];
+				vector<Heightmap*> rgb_map = { &rgb_maps[0][queryPointIndex], &rgb_maps[1][queryPointIndex], &rgb_maps[2][queryPointIndex] };
 				double heightmap_world_size = double(heightmapSize) * pixelSize;
 
 				for (Point point : points) {
@@ -478,6 +488,19 @@ int main() {
 					}
 					else {
 						heightmap.values[pixelID] = std::max(heightmap.values[pixelID], float(point.z));
+					}
+
+					for (int i = 0; i < 3; i++)
+					{
+						Heightmap* color_map = rgb_map[i];
+						color_map->count[pixelID]++;
+						color_map->sum[pixelID] += point.rgba[i];
+						if (isnan(color_map->values[pixelID])) {
+							color_map->values[pixelID] = point.rgba[i];
+						}
+						else {
+							color_map->values[pixelID] = std::max(color_map->values[pixelID], float(point.rgba[i]));
+						}
 					}
 				}
 			}
@@ -503,17 +526,23 @@ int main() {
 		string canonicalDir = fs::canonical(fs::path(outDir)).string();
 		print("writing results to {} \n", canonicalDir);
 
-		for(int i = 0; i < heightmaps.size(); i++){
+		/*for (int i = 0; i < heightmaps.size(); i++) {
 			Heightmap& heightmap = heightmaps[i];
 
 			
 			string dbgPath = format("{}/heightmap_{}.csv", outDir, i);
 
 			dbg_dumpHeightmap(heightmap, dbgPath);
-		}
+		}*/
 
 		string heightmapsPath = format("{}/heightmaps.bin", outDir);
 		saveHeightmaps(heightmaps, heightmapsPath);
+
+		for (int i = 0; i < 3; i++)
+		{
+			string rgbPath = format("{}/rgb_{}.bin", outDir, i);
+			saveHeightmaps(rgb_maps[i], rgbPath);
+		}
 	}
 
 	print("done! \n");
