@@ -14,6 +14,12 @@
 
 #include "unsuck.hpp"
 
+
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb/stb_image.h"
+#include "stb/stb_image_write.h"
+
 using namespace std;
 using std::print;
 
@@ -27,7 +33,7 @@ constexpr int heightmapSize    = 64;
 
 mutex mtx;
 
-string pointcloud_dir = "E:\\datasets\\point clouds\\CA13_SAN_SIM_small";
+string pointcloud_dir = "E:\\resources\\pointclouds\\CA13_las";
 //string pointcloud_dir = "E:\\datasets\\point clouds\\CA13_SAN_SIM";
 //string pointcloud_dir = "E:\\datasets\\point clouds\\swisssurface3d_uncomp";
 //string pointcloud_dir = "E:/resources/pointclouds/CA13_las";
@@ -56,8 +62,8 @@ struct Heightmap{
 	Point queryPoint;
 	vec3 world_min;
 	vec3 world_max;
-	double sum[heightmapSize * heightmapSize];
 	int count[heightmapSize * heightmapSize];
+	double sum[heightmapSize * heightmapSize];
 	float values[heightmapSize * heightmapSize];
 };
 
@@ -101,6 +107,112 @@ vector<Point> loadPoints(LasFile lasfile){
 	return points;
 }
 
+void saveHeightmapsPng(vector<Heightmap>& heightmaps, string outPath){
+	
+	string basedir = format("{}/../heightmaps/", outPath);
+	fs::create_directories(basedir);
+
+	// write colors of heightmap as png image
+	for(Heightmap& heightmap : heightmaps){
+		
+		auto qp = heightmap.queryPoint;
+		string pngpath = format("{}/../heightmaps/{}_{}.png", outPath, int64_t(qp.x), int64_t(qp.y));
+
+		//int stbi_write_png(char const *filename, int w, int h, int comp, const void *data, int stride_in_bytes);
+
+		vector<uint8_t> data(heightmapSize * heightmapSize * 4, 0);
+
+		for(int x = 0; x < heightmapSize; x++)
+		for(int y = 0; y < heightmapSize; y++)
+		{
+			int pixelID = x + y * heightmapSize;
+			auto entry = heightmap.values[pixelID];
+			
+			int value = 255.0f * clamp(heightmap.values[pixelID], 0.0f, 1000.0f) / 1000.0f;
+			
+			int targetPixelID = x + (heightmapSize - y - 1) * heightmapSize;
+
+			data[4 * targetPixelID + 0] = value;
+			data[4 * targetPixelID + 1] = value;
+			data[4 * targetPixelID + 2] = value;
+			data[4 * targetPixelID + 3] = 255;
+
+			if(heightmap.count[pixelID] == 0){
+				data[4 * targetPixelID + 0] = 255;
+				data[4 * targetPixelID + 1] = 0;
+				data[4 * targetPixelID + 2] = 0;
+				data[4 * targetPixelID + 3] = 255;
+			}
+		}
+
+		stbi_write_png(pngpath.c_str(), heightmapSize, heightmapSize, 4, data.data(), 4 * heightmapSize);
+	}
+}
+
+ void saveHeightmapsPng_normalized(vector<Heightmap>& heightmaps, string outPath){
+
+	 string basedir = format("{}/../normalized/", outPath);
+	 fs::create_directories(basedir);
+
+ 	// write colors of heightmap as png image
+ 	for(Heightmap& heightmap : heightmaps){
+		
+ 		auto qp = heightmap.queryPoint;
+		
+ 		string pngpath = format("{}/../normalized/{}_{}_normalized.png", outPath, int64_t(qp.x), int64_t(qp.y));
+
+ 		//int stbi_write_png(char const *filename, int w, int h, int comp, const void *data, int stride_in_bytes);
+
+ 		float min = Infinity;
+ 		float max = -Infinity;
+
+ 		for(int x = 0; x < heightmapSize; x++)
+ 		for(int y = 0; y < heightmapSize; y++)
+ 		{
+			int pixelID = x + y * heightmapSize;
+
+ 			float value = heightmap.values[pixelID];
+ 			int count = heightmap.count[pixelID];
+
+			if (count > 0) {
+				min = std::min(min, value);
+				max = std::max(min, value);
+			}
+ 		}
+
+ 		vector<uint8_t> data(heightmapSize * heightmapSize * 4, 0);
+
+ 		for(int x = 0; x < heightmapSize; x++)
+ 		for(int y = 0; y < heightmapSize; y++)
+ 		{
+ 			int pixelID = x + y * heightmapSize;
+ 			auto entry = heightmap.values[pixelID];
+			
+ 			//int value = 255.0f * clamp(heightmap.values[pixelID], 0.0f, 1000.0f) / 1000.0f;
+
+			int value = clamp(255.0f * ((heightmap.values[pixelID] - min) / (max - min)), 0.0f, 255.0f);
+			
+ 			int targetPixelID = x + (heightmapSize - y - 1) * heightmapSize;
+
+ 			data[4 * targetPixelID + 0] = value;
+ 			data[4 * targetPixelID + 1] = value;
+ 			data[4 * targetPixelID + 2] = value;
+ 			data[4 * targetPixelID + 3] = 255;
+
+			if (heightmap.count[pixelID] == 0) {
+				data[4 * targetPixelID + 0] = 255;
+				data[4 * targetPixelID + 1] = 0;
+				data[4 * targetPixelID + 2] = 0;
+				data[4 * targetPixelID + 3] = 255;
+			}
+ 		}
+
+		
+
+ 		stbi_write_png(pngpath.c_str(), heightmapSize, heightmapSize, 4, data.data(), 4 * heightmapSize);
+ 	}
+ }
+
 void saveHeightmaps(vector<Heightmap>& heightmaps, string outPath){
 
 	// heightmap file format:
@@ -131,22 +243,28 @@ void saveHeightmaps(vector<Heightmap>& heightmaps, string outPath){
 
 			// float height = heightmap.values[pixelID];
 			float height = heightmap.sum[pixelID] / double(heightmap.count[pixelID]);
-			if (heightmap.count[pixelID] == 0)
+			if (heightmap.count[pixelID] == 0) {
 				height = std::numeric_limits<float>::quiet_NaN();
-
-			int R = 0;
-			int G = 255;
-			int B = 0;
-
-			if(isnan(height)){
-				R = 255;
-				G = 0;
-				B = 0;
 			}
 
-			double heightmap_meters = double(heightmapSize) * pixelSize;
-			double x = double(px) * pixelSize + heightmap.world_min.x;
-			double y = double(py) * pixelSize + heightmap.world_min.y;
+			// int R = 0;
+			// int G = 255;
+			// int B = 0;
+
+			// if(isnan(height)){
+			// 	R = 255;
+			// 	G = 0;
+			// 	B = 0;
+			// }
+
+			// double heightmap_meters = double(heightmapSize) * pixelSize;
+			// double x = double(px) * pixelSize + heightmap.world_min.x;
+			// double y = double(py) * pixelSize + heightmap.world_min.y;
+
+			print("{:6.1f}, ", height);
+			if(py == heightmapSize - 1){
+				println(" ");
+			}
 
 			buffer.set<float>(height, heightmapByteOffset + 24 + pixelID * 4);
 		}
@@ -283,7 +401,7 @@ vector<Point> loadQueryPoints(vector<LasFile>& lasfiles, int64_t numPointsTotal)
 	);
 
 	print("query points: \n");
-	for (int i = 0; i < 10; i++) {
+	for (int i = 0; i < min(queryPoints.size(), size_t(10)); i++) {
 		Point point = queryPoints[i];
 		print("{:.2f}, {:.2f}, {:.2f} \n", point.x, point.y, point.z);
 	}
@@ -396,7 +514,27 @@ int main() {
 	// }
 
 	vector<Point> queryPoints = loadQueryPoints(lasfiles, numPointsTotal);
-	
+
+	// queryPoints[0].x = 6.9776766e+05;
+	// queryPoints[0].y = 3.9181016e+06;
+	// queryPoints[0].z = 4.4180000e+01;
+
+	// queryPoints[1].x = queryPoints[0].x + 10.0f;
+	// queryPoints[1].y = queryPoints[0].y + 10.0f;
+	// queryPoints[1].z = queryPoints[0].z +  0.0f;
+
+	// queryPoints[2].x = queryPoints[0].x + 30.0f;
+	// queryPoints[2].y = queryPoints[0].y +  0.0f;
+	// queryPoints[2].z = queryPoints[0].z +  0.0f;
+
+	// queryPoints[3].x = queryPoints[0].x +  0.0f;
+	// queryPoints[3].y = queryPoints[0].y + 30.0f;
+	// queryPoints[3].z = queryPoints[0].z +  0.0f;
+
+	// queryPoints[4].x = queryPoints[0].x - 10.0f;
+	// queryPoints[4].y = queryPoints[0].y + 30.0f;
+	// queryPoints[4].z = queryPoints[0].z +  0.0f;
+
 	// Create heightmaps.
 	// Also, for each tile, create a list of query points it affects
 	print("allocate heightmaps and find out which tiles affect them \n");
@@ -537,6 +675,8 @@ int main() {
 
 		string heightmapsPath = format("{}/heightmaps.bin", outDir);
 		saveHeightmaps(heightmaps, heightmapsPath);
+		saveHeightmapsPng(heightmaps, heightmapsPath);
+		saveHeightmapsPng_normalized(heightmaps, heightmapsPath);
 
 		for (int i = 0; i < 3; i++)
 		{
