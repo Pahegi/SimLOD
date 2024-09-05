@@ -45,7 +45,7 @@ async function readHeader(file){
 	if(header.versionMajor === 1 && header.versionMinor <= 2){
 		header.numPoints     = buffer.readUint32LE(107); 
 	}else{
-		header.numPoints     = buffer.readUint64LE(247); 
+		header.numPoints     = buffer.readBigUint64LE(247); 
 	}
 	header.scale             = {
 		x: buffer.readDoubleLE(131),

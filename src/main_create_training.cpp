@@ -39,6 +39,8 @@ string pointcloud_dir = "E:\\resources\\pointclouds\\CA13_las";
 //string pointcloud_dir = "E:/resources/pointclouds/CA13_las";
 // string pointcloud_dir = "D:/resources/pointclouds/CA13_las_tmp";
 
+string outDir = "./results/ca_13_fixed";
+
 struct Point{
 	double x, y, z;
 	union{
@@ -261,10 +263,10 @@ void saveHeightmaps(vector<Heightmap>& heightmaps, string outPath){
 			// double x = double(px) * pixelSize + heightmap.world_min.x;
 			// double y = double(py) * pixelSize + heightmap.world_min.y;
 
-			print("{:6.1f}, ", height);
-			if(py == heightmapSize - 1){
-				println(" ");
-			}
+			// print("{:6.1f}, ", height);
+			// if(py == heightmapSize - 1){
+			// 	println(" ");
+			// }
 
 			buffer.set<float>(height, heightmapByteOffset + 24 + pixelID * 4);
 		}
@@ -659,7 +661,6 @@ int main() {
 
 	{// Now write the resulting heightmaps to disk
 		print("Storing results on disk \n");
-		string outDir = "./results";
 		fs::create_directories(outDir);
 		string canonicalDir = fs::canonical(fs::path(outDir)).string();
 		print("writing results to {} \n", canonicalDir);
