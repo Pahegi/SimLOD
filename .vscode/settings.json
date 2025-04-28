@@ -95,7 +95,6 @@
 		"bitset": "cpp"
 	},
 	"files.trimTrailingWhitespace": false,
-	"editor.fontSize": 20,
 	"editor.autoIndent": "advanced",
 	"editor.detectIndentation": false,
 	"editor.renderWhitespace": "all",
@@ -105,8 +104,6 @@
 	"editor.formatOnType": false,
 	"editor.acceptSuggestionOnEnter": "off",
 	"editor.acceptSuggestionOnCommitCharacter": false,
-	"terminal.integrated.fontSize": 20,
-	"markdown.preview.fontSize": 20,
 	"editor.autoClosingQuotes": "never",
 	"editor.autoSurround": "never",
 	"C_Cpp.errorSquiggles": "Enabled",
