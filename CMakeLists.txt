@@ -2,8 +2,8 @@ cmake_minimum_required(VERSION 3.22)
 project(SimLOD)
 
 include(FetchContent)
-
-set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_POLICY_VERSION_MINIMUM 3.5)
+set(CMAKE_CXX_STANDARD 20)
 
 option(SimLOD_CreateCUDASymlinks "Create symbolic links instead of copying CUDA files." OFF)
 
